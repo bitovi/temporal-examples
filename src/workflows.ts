@@ -2,9 +2,6 @@ import {
   proxyActivities,
   ChildWorkflowHandle,
   startChild,
-  defineQuery,
-  defineSignal,
-  setHandler,
 } from "@temporalio/workflow"
 
 import type * as activities from "./activities"
@@ -13,26 +10,12 @@ const { writeToDatabase } = proxyActivities<typeof activities>({
   startToCloseTimeout: "1 minute",
 })
 
-export const statusQuery = defineQuery<string>("status")
-export const childCompleteSignal = defineSignal<[]>("childComplete")
-
-export async function parentWorkflow(
-  workflowId: string,
-  ids: number[]
-): Promise<string[]> {
+export async function parentWorkflow(ids: number[]): Promise<string[]> {
   const childHandles: ChildWorkflowHandle<typeof childWorkflow>[] = []
-
-  let complete = 0
-  setHandler(childCompleteSignal, () => {
-    complete += 1
-  })
-  setHandler(statusQuery, () => {
-    return `${complete} of ${ids.length} complete`
-  })
 
   for (const id of ids) {
     const handle = await startChild(childWorkflow, {
-      args: [workflowId, id],
+      args: [id],
     })
     childHandles.push(handle)
   }
@@ -40,6 +23,6 @@ export async function parentWorkflow(
   return Promise.all(childHandles.map((childHandle) => childHandle.result()))
 }
 
-export async function childWorkflow(parentWorkflowId: string, id: number) {
-  return writeToDatabase(parentWorkflowId, id)
+export async function childWorkflow(id: number) {
+  return writeToDatabase(id)
 }
