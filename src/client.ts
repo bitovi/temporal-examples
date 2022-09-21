@@ -9,13 +9,17 @@ async function run() {
     connection,
   })
 
+  const workflowId = `workflow-${uuidv4()}`
+  console.log({ workflowId })
+
   const handle = await client.start(parentWorkflow, {
-    args: ["workflow1"],
+    args: [workflowId, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
     taskQueue: "parent-workflow-queue",
-    workflowId: `workflow-${uuidv4()}`,
+    workflowId,
   })
 
-  console.log(await handle.result())
+  const results = await handle.result()
+  console.log(results.join("\n"))
 }
 
 run().catch((err) => {

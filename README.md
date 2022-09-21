@@ -1,7 +1,7 @@
 # Temporal Examples
 
-1. [Parent Workflow](https://github.com/phillipskevin/temporal-examples/tree/main)
-2. [Parent -> Child](TODO)
-3. [Parent -> Child with Query](TODO)
-4. [Parent -> Child with Query and signalWithStart](TODO)
-5. [Parent -> Child with Query and signalWithStart and continueAsNew](TODO)
+1. [Basic Workflow](TODO)
+2. [Parent -> child workflow](TODO)
+3. [Parent -> child workflow with query](TODO)
+4. [Parent -> child workflow with query and signalWithStart](TODO)
+5. [Parent -> child workflow with query and signalWithStart and continueAsNew](TODO)
