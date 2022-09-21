@@ -9,7 +9,7 @@ import {
 
 import type * as activities from "./activities"
 
-const { writeToDatabase } = proxyActivities<typeof activities>({
+const { writeSentence } = proxyActivities<typeof activities>({
   startToCloseTimeout: "1 minute",
 })
 
@@ -41,5 +41,5 @@ export async function parentWorkflow(
 }
 
 export async function childWorkflow(parentWorkflowId: string, id: number) {
-  return writeToDatabase(parentWorkflowId, id)
+  return writeSentence(parentWorkflowId, id)
 }

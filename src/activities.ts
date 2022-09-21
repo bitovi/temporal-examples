@@ -3,7 +3,7 @@ import { childCompleteSignal } from "./workflows"
 import Sentencer from "sentencer"
 import { Context } from "@temporalio/activity"
 
-export async function writeToDatabase(
+export async function writeSentence(
   parentWorkflowId: string,
   id: number
 ): Promise<string> {
