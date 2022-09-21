@@ -1,7 +1,7 @@
 import Sentencer from "sentencer"
 import { Context } from "@temporalio/activity"
 
-export async function writeToDatabase(id: number): Promise<string> {
+export async function writeSentence(id: number): Promise<string> {
   const context = Context.current()
   await context.sleep(Math.floor(Math.random() * 30000))
   const result = Sentencer.make(

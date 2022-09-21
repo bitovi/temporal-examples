@@ -6,7 +6,7 @@ import {
 
 import type * as activities from "./activities"
 
-const { writeToDatabase } = proxyActivities<typeof activities>({
+const { writeSentence } = proxyActivities<typeof activities>({
   startToCloseTimeout: "1 minute",
 })
 
@@ -24,5 +24,5 @@ export async function parentWorkflow(ids: number[]): Promise<string[]> {
 }
 
 export async function childWorkflow(id: number) {
-  return writeToDatabase(id)
+  return writeSentence(id)
 }
