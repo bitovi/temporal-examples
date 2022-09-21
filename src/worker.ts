@@ -5,7 +5,7 @@ async function run() {
   const parentWorker = await Worker.create({
     workflowsPath: require.resolve("./workflows"),
     activities,
-    taskQueue: "parent-workflow-queue",
+    taskQueue: "task-queue",
   })
 
   await parentWorker.run()
