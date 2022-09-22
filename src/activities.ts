@@ -22,17 +22,20 @@ export async function signalWithStartChildWorkflow(
   })
 }
 
-export async function writeSentence(
-  parentWorkflowId: string,
-  id: number
-): Promise<void> {
+export async function writeSentence(id: number): Promise<string> {
   const context = Context.current()
   await context.sleep(Math.floor(Math.random() * 30000))
   const result = Sentencer.make(
     `${id} {{ adjective }} {{ nouns }} went to the {{ noun }}`
   )
+  return result
+}
 
+export async function sendCompleteSignal(
+  parentWorkflowId: string,
+  sentence: string
+): Promise<void> {
   const client = new WorkflowClient()
   const handle = client.getHandle(`${parentWorkflowId}-status-receiver`)
-  return handle.signal(childCompleteSignal, result)
+  return handle.signal(childCompleteSignal, sentence)
 }

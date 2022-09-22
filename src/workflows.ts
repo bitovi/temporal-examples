@@ -9,11 +9,10 @@ import {
 
 import type * as activities from "./activities"
 
-const { writeSentence, signalWithStartChildWorkflow } = proxyActivities<
-  typeof activities
->({
-  startToCloseTimeout: "1 minute",
-})
+const { writeSentence, signalWithStartChildWorkflow, sendCompleteSignal } =
+  proxyActivities<typeof activities>({
+    startToCloseTimeout: "1 minute",
+  })
 
 export const statusQuery = defineQuery<string>("status")
 export const childCompleteSignal =
@@ -74,9 +73,10 @@ export async function childWorkflow() {
   while (true) {
     await condition(() => pendingSentences.length > 0)
 
-    const sentence = pendingSentences.shift()
-    if (sentence) {
-      await writeSentence(sentence.parentWorkflowId, sentence.id)
+    const pendingSentence = pendingSentences.shift()
+    if (pendingSentence) {
+      const sentence = await writeSentence(pendingSentence.id)
+      await sendCompleteSignal(pendingSentence.parentWorkflowId, sentence)
     }
   }
 }
