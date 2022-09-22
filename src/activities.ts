@@ -13,10 +13,14 @@ export async function writeSentence(
     `${id} {{ adjective }} {{ nouns }} went to the {{ noun }}`
   )
 
-  const client = new WorkflowClient()
-  const handle = client.getHandle(parentWorkflowId)
-  await handle.signal(childCompleteSignal)
-
   console.log(result)
   return result
+}
+
+export async function sendCompleteSignal(
+  parentWorkflowId: string
+): Promise<void> {
+  const client = new WorkflowClient()
+  const handle = client.getHandle(parentWorkflowId)
+  return handle.signal(childCompleteSignal)
 }

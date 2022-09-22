@@ -9,7 +9,9 @@ import {
 
 import type * as activities from "./activities"
 
-const { writeSentence } = proxyActivities<typeof activities>({
+const { writeSentence, sendCompleteSignal } = proxyActivities<
+  typeof activities
+>({
   startToCloseTimeout: "1 minute",
 })
 
@@ -41,5 +43,7 @@ export async function parentWorkflow(
 }
 
 export async function childWorkflow(parentWorkflowId: string, id: number) {
-  return writeSentence(parentWorkflowId, id)
+  const sentence = await writeSentence(parentWorkflowId, id)
+  await sendCompleteSignal(parentWorkflowId)
+  return sentence
 }
