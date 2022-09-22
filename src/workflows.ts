@@ -5,9 +5,12 @@ import {
   defineQuery,
   defineSignal,
   setHandler,
+  continueAsNew,
 } from "@temporalio/workflow"
 
 import type * as activities from "./activities"
+
+const MAX_CHILD_ITERATIONS = 3
 
 const { writeSentence, signalWithStartChildWorkflow } = proxyActivities<
   typeof activities
@@ -71,12 +74,16 @@ export async function childWorkflow() {
   )
 
   // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (let i = 0; i < MAX_CHILD_ITERATIONS; i++) {
     await condition(() => pendingSentences.length > 0)
 
-    const sentence = pendingSentences.shift()
-    if (sentence) {
-      await writeSentence(sentence.parentWorkflowId, sentence.id)
+    while (pendingSentences.length > 0) {
+      const sentence = pendingSentences.shift()
+      if (sentence) {
+        await writeSentence(sentence.parentWorkflowId, sentence.id)
+      }
     }
   }
+
+  await continueAsNew<typeof childWorkflow>()
 }
