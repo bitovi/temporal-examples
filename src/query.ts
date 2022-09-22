@@ -5,7 +5,7 @@ const workflowId = process.argv[2]
 
 async function run() {
   const client = new WorkflowClient()
-  const handle = client.getHandle(workflowId)
+  const handle = client.getHandle(`${workflowId}-status-receiver`)
   const status = await handle.query(statusQuery)
 
   console.log(status)
