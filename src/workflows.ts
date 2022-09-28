@@ -12,78 +12,87 @@ import type * as activities from "./activities"
 
 const MAX_CHILD_ITERATIONS = 3
 
-const { writeSentence, signalWithStartChildWorkflow, sendCompleteSignal } =
+const { sendEmail, sendCompleteSignal, signalWithStartSendEmailWorkflow } =
   proxyActivities<typeof activities>({
     startToCloseTimeout: "1 minute",
   })
 
 export const statusQuery = defineQuery<string>("status")
-export const childCompleteSignal =
-  defineSignal<[sentence: string]>("childComplete")
-export const queueChildWorkflowSignal =
-  defineSignal<[parentWorkflowId: string, id: number]>("queueChilWorkflow")
+export const childCompleteSignal = defineSignal<[]>("childComplete")
 
-export async function parentWorkflow(
+export const queueSendEmailWorkflowSignal = defineSignal<
+  [parentWorkflowId: string, subject: string, body: string]
+>("queueSendEmailWorkflow")
+
+export async function sendEmailBatchWorkflow(
   workflowId: string,
-  ids: number[]
-): Promise<string[]> {
-  const statusReceiverHandler = await startChild(parentWorkflowSignalReceiver, {
-    workflowId: `${workflowId}-status-receiver`,
-    args: [ids.length],
-  })
+  emailAddresses: string[],
+  subject: string,
+  body: string
+): Promise<void> {
+  const statusReceiverHandler = await startChild(
+    sendEmailBatchStatusReceiverWorkflow,
+    {
+      workflowId: `${workflowId}-status-receiver`,
+      args: [emailAddresses.length],
+    }
+  )
 
-  for (const id of ids) {
-    await signalWithStartChildWorkflow(workflowId, id)
+  for (const emailAddress of emailAddresses) {
+    await signalWithStartSendEmailWorkflow(
+      workflowId,
+      emailAddress,
+      subject,
+      body
+    )
   }
 
   return await statusReceiverHandler.result()
 }
 
-export async function parentWorkflowSignalReceiver(
+export async function sendEmailBatchStatusReceiverWorkflow(
   total: number
-): Promise<string[]> {
-  const sentences: string[] = []
+): Promise<void> {
+  let complete = 0
+  setHandler(childCompleteSignal, () => {
+    complete += 1
+  })
 
   setHandler(statusQuery, () => {
-    return `${sentences.length} of ${total} complete`
+    return `${complete} of ${total} complete`
   })
 
-  setHandler(childCompleteSignal, (sentence: string) => {
-    console.log(sentence)
-    sentences.push(sentence)
-  })
+  await condition(() => complete === total)
 
-  await condition(() => sentences.length === total)
-
-  return sentences
+  return
 }
 
-interface Sentence {
+interface PendingEmail {
   parentWorkflowId: string
-  id: number
+  subject: string
+  body: string
 }
-export async function childWorkflow() {
-  const pendingSentences: Sentence[] = []
+export async function sendEmailWorkflow(emailAddress: string) {
+  const pendingEmails: PendingEmail[] = []
 
   setHandler(
-    queueChildWorkflowSignal,
-    (parentWorkflowId: string, id: number) => {
-      pendingSentences.push({ parentWorkflowId, id })
+    queueSendEmailWorkflowSignal,
+    (parentWorkflowId: string, subject: string, body: string) => {
+      pendingEmails.push({ parentWorkflowId, subject, body })
     }
   )
 
-  // eslint-disable-next-line no-constant-condition
   for (let i = 0; i < MAX_CHILD_ITERATIONS; i++) {
-    await condition(() => pendingSentences.length > 0)
+    await condition(() => pendingEmails.length > 0)
 
-    while (pendingSentences.length > 0) {
-      const pendingSentence = pendingSentences.shift()
-      if (pendingSentence) {
-        const sentence = await writeSentence(pendingSentence.id)
-        await sendCompleteSignal(pendingSentence.parentWorkflowId, sentence)
+    while (pendingEmails.length > 0) {
+      const pendingEmail = pendingEmails.shift()
+      if (pendingEmail) {
+        await sendEmail(emailAddress, pendingEmail.subject, pendingEmail.body)
+        await sendCompleteSignal(pendingEmail.parentWorkflowId)
       }
     }
   }
 
-  await continueAsNew<typeof childWorkflow>()
+  await continueAsNew<typeof sendEmailWorkflow>(emailAddress)
 }

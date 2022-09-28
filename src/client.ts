@@ -1,5 +1,5 @@
 import { Connection, WorkflowClient } from "@temporalio/client"
-import { parentWorkflow } from "./workflows"
+import { sendEmailBatchWorkflow } from "./workflows"
 import { v4 as uuidv4 } from "uuid"
 
 async function run() {
@@ -12,14 +12,22 @@ async function run() {
   const workflowId = `workflow-${uuidv4()}`
   console.log({ workflowId })
 
-  const handle = await client.start(parentWorkflow, {
-    args: [workflowId, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+  const handle = await client.start(sendEmailBatchWorkflow, {
+    args: [
+      workflowId,
+      [
+        "a123@notarealemailaddress.com",
+        "b456@notarealemailaddress.com",
+        "c789@notarealemailaddress.com",
+      ],
+      "Urgent message",
+      "We've been trying to contact you about your extended warranty",
+    ],
     taskQueue: "task-queue",
     workflowId,
   })
 
-  const results = await handle.result()
-  console.log(results.join("\n"))
+  await handle.result()
 }
 
 run().catch((err) => {

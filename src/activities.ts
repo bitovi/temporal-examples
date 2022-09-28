@@ -1,41 +1,39 @@
 import { WorkflowClient } from "@temporalio/client"
 import {
-  childWorkflow,
-  queueChildWorkflowSignal,
+  sendEmailWorkflow,
+  queueSendEmailWorkflowSignal,
   childCompleteSignal,
 } from "./workflows"
-import Sentencer from "sentencer"
-import { Context } from "@temporalio/activity"
 
-export async function signalWithStartChildWorkflow(
+export async function signalWithStartSendEmailWorkflow(
   parentWorkflowId: string,
-  id: number
+  emailAddress: string,
+  subject: string,
+  body: string
 ): Promise<void> {
   const client = new WorkflowClient()
 
-  await client.signalWithStart(childWorkflow, {
+  await client.signalWithStart(sendEmailWorkflow, {
     taskQueue: "task-queue",
-    workflowId: `child-${id}-workflow`,
-    args: [],
-    signal: queueChildWorkflowSignal,
-    signalArgs: [parentWorkflowId, id],
+    workflowId: `${emailAddress}-send-email-workflow`,
+    args: [emailAddress],
+    signal: queueSendEmailWorkflowSignal,
+    signalArgs: [parentWorkflowId, subject, body],
   })
 }
 
-export async function writeSentence(id: number): Promise<string> {
-  const context = Context.current()
-  await context.sleep(Math.floor(Math.random() * 30000))
-  const result = Sentencer.make(
-    `${id} {{ adjective }} {{ nouns }} went to the {{ noun }}`
-  )
-  return result
+export async function sendEmail(
+  emailAddress: string,
+  subject: string,
+  body: string
+): Promise<void> {
+  console.log({ emailAddress, subject, body })
 }
 
 export async function sendCompleteSignal(
-  parentWorkflowId: string,
-  sentence: string
+  parentWorkflowId: string
 ): Promise<void> {
   const client = new WorkflowClient()
   const handle = client.getHandle(`${parentWorkflowId}-status-receiver`)
-  return handle.signal(childCompleteSignal, sentence)
+  return handle.signal(childCompleteSignal)
 }
