@@ -9,7 +9,7 @@ import {
 
 import type * as activities from "./activities"
 
-const { writeSentence, sendCompleteSignal } = proxyActivities<
+const { sendEmail, sendCompleteSignal } = proxyActivities<
   typeof activities
 >({
   startToCloseTimeout: "1 minute",
@@ -18,23 +18,26 @@ const { writeSentence, sendCompleteSignal } = proxyActivities<
 export const statusQuery = defineQuery<string>("status")
 export const childCompleteSignal = defineSignal<[]>("childComplete")
 
-export async function parentWorkflow(
+export async function sendEmailBatchWorkflow(
   workflowId: string,
-  ids: number[]
-): Promise<string[]> {
-  const childHandles: ChildWorkflowHandle<typeof childWorkflow>[] = []
+  emailAddresses: string[],
+  subject: string,
+  body: string
+): Promise<void[]> {
+  const childHandles: ChildWorkflowHandle<typeof sendEmailWorkflow>[] = []
 
   let complete = 0
   setHandler(childCompleteSignal, () => {
     complete += 1
   })
+
   setHandler(statusQuery, () => {
-    return `${complete} of ${ids.length} complete`
+    return `${complete} of ${emailAddresses.length} complete`
   })
 
-  for (const id of ids) {
-    const handle = await startChild(childWorkflow, {
-      args: [workflowId, id],
+  for (const emailAddress of emailAddresses) {
+    const handle = await startChild(sendEmailWorkflow, {
+      args: [workflowId, emailAddress, subject, body],
     })
     childHandles.push(handle)
   }
@@ -42,8 +45,12 @@ export async function parentWorkflow(
   return Promise.all(childHandles.map((childHandle) => childHandle.result()))
 }
 
-export async function childWorkflow(parentWorkflowId: string, id: number) {
-  const sentence = await writeSentence(parentWorkflowId, id)
-  await sendCompleteSignal(parentWorkflowId)
-  return sentence
+export async function sendEmailWorkflow(
+  parentWorkflowId: string,
+  emailAddress: string,
+  subject: string,
+  body: string
+): Promise<void> {
+  await sendEmail(emailAddress, subject, body)
+  return sendCompleteSignal(parentWorkflowId)
 }
