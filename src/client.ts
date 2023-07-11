@@ -12,8 +12,8 @@ async function run() {
   const workflowId = `workflow-${uuidv4()}`
 
   const handle = await client.start(basicWorkflow, {
-    args: [7],
-    taskQueue: "task-queue",
+    args: [],
+    taskQueue: "task-queue-1",
     workflowId,
   })
 
