@@ -2,32 +2,36 @@ import Sentencer from 'sentencer'
 import { Context } from '@temporalio/activity'
 
 export async function writeSentence(timeout: number): Promise<any> {
-  const cancelPromise = Context.current().cancelled
+  let heartbeatEnabled = true
 
-  const realPromise = new Promise(async (resolve, reject) => {
-    Context.current().heartbeat(0)
+  new Promise(async () => {
+    while (heartbeatEnabled) {
+      console.log('heartbeat')
+      await Context.current().sleep(1000)
+      Context.current().heartbeat()
+    }
+  })
 
+  const canceledPromise = Context.current().cancelled
+
+  const activityPromise = new Promise(async (resolve) => {
     await Context.current().sleep(timeout * 1000)
-    console.log('timeout complete')
-
-    Context.current().heartbeat(50)
 
     const result = Sentencer.make(
       `{{ adjective }} {{ nouns }} went to the {{ noun }}`
     )
 
-    Context.current().heartbeat(100)
+    console.log('result')
 
     console.log(result)
     resolve(result)
   })
 
-  return Promise.any([ cancelPromise, realPromise ])
+  return Promise.race([ canceledPromise, activityPromise ])
     .then((real) => {
       return real
     })
-    .catch((cancel) => {
-      console.log('canceled')
-      return ''
+    .finally(() => {
+      heartbeatEnabled = false
     })
 }
