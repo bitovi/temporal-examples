@@ -2,13 +2,14 @@ import { Worker } from "@temporalio/worker"
 import * as activities from "./activities"
 
 async function run() {
-  const parentWorker = await Worker.create({
+  const worker = await Worker.create({
     workflowsPath: require.resolve("./workflows"),
     activities,
     taskQueue: "task-queue",
+    maxConcurrentActivityTaskExecutions: 1,
   })
 
-  await parentWorker.run()
+  await worker.run()
 }
 
 run().catch((err) => {

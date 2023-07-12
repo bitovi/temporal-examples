@@ -3,6 +3,8 @@ import { basicWorkflow } from "./workflows"
 import { v4 as uuidv4 } from "uuid"
 
 async function run() {
+  const timeout = Number(process.argv[2] || 0)
+
   const connection = await Connection.connect()
 
   const client = new WorkflowClient({
@@ -12,7 +14,7 @@ async function run() {
   const workflowId = `workflow-${uuidv4()}`
 
   const handle = await client.start(basicWorkflow, {
-    args: [7],
+    args: [ timeout ],
     taskQueue: "task-queue",
     workflowId,
   })
