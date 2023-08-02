@@ -2,15 +2,15 @@ import Sentencer from 'sentencer'
 import { Context } from '@temporalio/activity'
 
 export async function writeSentence(timeout: number): Promise<any> {
-  let heartbeatEnabled = true
+  let heartbeatEnabled = true;
 
-  new Promise(async () => {
+  (async () => {
     while (heartbeatEnabled) {
       console.log('heartbeat')
       await Context.current().sleep(1000)
       Context.current().heartbeat()
     }
-  })
+  })()
 
   const canceledPromise = Context.current().cancelled
 
@@ -29,9 +29,10 @@ export async function writeSentence(timeout: number): Promise<any> {
 
   return Promise.race([ canceledPromise, activityPromise ])
     .then((real) => {
+      heartbeatEnabled = false
       return real
     })
-    .finally(() => {
+    .catch(() => {
       heartbeatEnabled = false
     })
 }
