@@ -1,13 +1,34 @@
-import Sentencer from "sentencer"
 import { Context } from "@temporalio/activity"
 
-export async function writeSentence(id: number): Promise<string> {
-  const context = Context.current()
-  await context.sleep(Math.floor(Math.random() * 30000))
-  const result = Sentencer.make(
-    `${id} {{ adjective }} {{ nouns }} went to the {{ noun }}`
-  )
+export async function retrieveCart(cartId: number) {
+  return {
+    products: [
+      {
+        productId: 5,
+        quantity: 2
+      }
+    ],
+    total: 799
+  }
+}
 
-  console.log(result)
-  return result
+export async function authorizePayment(creditCardNumber: string, amount: number): Promise<string> {
+  const context = Context.current()
+  context.sleep(2000)
+  return '111'
+}
+
+export async function sendToStore(): Promise<void> {
+  const context = Context.current()
+  context.sleep(2000)
+}
+
+export async function requestDelivery(): Promise<void> {
+  const context = Context.current()
+  context.sleep(3000)
+}
+
+export async function capturePayment(paymentNumber: string): Promise<void> {
+  const context = Context.current()
+  context.sleep(1000)
 }

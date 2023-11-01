@@ -1,24 +1,56 @@
 import { Connection, WorkflowClient } from "@temporalio/client"
-import { basicWorkflow } from "./workflows"
+import { placeOrder, orderReadySignal, orderDeliveredSignal } from "./workflows"
 import { v4 as uuidv4 } from "uuid"
 
-async function run() {
+async function getClient() {
   const connection = await Connection.connect()
 
   const client = new WorkflowClient({
     connection,
   })
 
-  const workflowId = `workflow-${uuidv4()}`
+  return client
+}
 
-  const handle = await client.start(basicWorkflow, {
-    args: [7],
+async function order() {
+  const client = await getClient()
+
+  await client.start(placeOrder, {
+    args: [
+      '123',
+      '4111111111111111'
+    ],
     taskQueue: "task-queue",
-    workflowId,
+    workflowId: '123'
   })
+}
 
-  const results = await handle.result()
-  console.log(results)
+async function ready() {
+  const client = await getClient()
+  const handle = client.getHandle('123')
+  await handle.signal(orderReadySignal)
+}
+
+async function delivered() {
+  const client = await getClient()
+  const handle = client.getHandle('123')
+  await handle.signal(orderDeliveredSignal)
+}
+
+async function run() {
+  const arg = process.argv[2]
+
+  switch(arg) {
+    case 'order':
+      await order()
+      break
+    case 'ready':
+      await ready()
+      break
+    case 'delivered':
+      await delivered()
+      break
+  }
 }
 
 run().catch((err) => {
