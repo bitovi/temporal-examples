@@ -18,7 +18,13 @@ export async function authorizePayment(creditCardNumber: string, amount: number)
   return '111'
 }
 
+export async function voidPaymentAuthorization(authorizationNumber: string): Promise<void> {
+  const context = Context.current()
+  context.sleep(2000)
+}
+
 export async function sendToStore(): Promise<void> {
+  // throw new Error('Store Closed')
   const context = Context.current()
   context.sleep(2000)
 }

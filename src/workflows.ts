@@ -2,9 +2,12 @@ import { proxyActivities, defineSignal, setHandler, condition } from '@temporali
 import type * as activities from './activities'
 
 const {
-  retrieveCart, authorizePayment, sendToStore, requestDelivery, capturePayment
+  retrieveCart, authorizePayment, voidPaymentAuthorization, sendToStore, requestDelivery, capturePayment
 } = proxyActivities<typeof activities>({
-    startToCloseTimeout: '1 minute'
+    startToCloseTimeout: '1 minute',
+    retry: {
+      maximumAttempts: 3
+    }
 })
 
 enum OrderState { Placed, Authorized, Ready, Delivered, Complete }
@@ -18,17 +21,31 @@ export async function placeOrder(cartId, creditCardNumber): Promise<void> {
   setHandler(orderReadySignal, () => { status = OrderState.Ready })
   setHandler(orderDeliveredSignal, () => { status = OrderState.Delivered })
 
-  const cart = await retrieveCart(cartId)
+  let cart
+  try {
+    cart = await retrieveCart(cartId)
+  } catch(e) {
+    console.error(`Could not retrieve cart ${e.message}`)
+    return
+  }
 
-  const paymentAuth = await authorizePayment(creditCardNumber, cart.total)
+  const compensations: Function[]  = []
+  try {
+    const paymentAuth = await authorizePayment(creditCardNumber, cart.total)
+    compensations.unshift(() => voidPaymentAuthorization(paymentAuth))
 
-  await sendToStore()
+    await sendToStore()
 
-  await condition(() => status === OrderState.Ready)
+    await condition(() => status === OrderState.Ready)
 
-  await requestDelivery()
+    await requestDelivery()
 
-  await condition(() => status === OrderState.Delivered)
+    await condition(() => status === OrderState.Delivered)
 
-  await capturePayment(paymentAuth)
+    await capturePayment(paymentAuth)
+  } catch(e) {
+    for (const compensation of compensations) {
+      await compensation()
+    }
+  }
 }

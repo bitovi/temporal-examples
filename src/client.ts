@@ -50,6 +50,8 @@ async function run() {
     case 'delivered':
       await delivered()
       break
+    default:
+      throw new Error(`case ${arg} unknown`)
   }
 }
 
