@@ -2,22 +2,12 @@ import { proxyActivities, defineSignal, setHandler, condition } from '@temporali
 import type * as activities from './activities'
 
 const {
-  retrieveCart,
-  authorizePayment,
-  sendToStore,
-  requestDelivery,
-  capturePayment
+  retrieveCart, authorizePayment, sendToStore, requestDelivery, capturePayment
 } = proxyActivities<typeof activities>({
     startToCloseTimeout: '1 minute'
 })
 
-enum OrderState {
-  Placed,
-  Authorized,
-  Ready,
-  Delivered,
-  Complete
-}
+enum OrderState { Placed, Authorized, Ready, Delivered, Complete }
 
 export const orderReadySignal = defineSignal('Ready')
 export const orderDeliveredSignal = defineSignal('Delivered')
