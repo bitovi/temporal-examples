@@ -8,7 +8,7 @@ docker compose up
 2) Run a local mongodb container using docker:
 
 ```
-docker run -d --name mongo-codec -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=username -e MONGO_INITDB_ROOT_PASSWORD=password mongo
+docker run -d --name mongo-codec -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME={YOUR_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD={YOUR_PASSWORD} mongo
 ```
 
 3) Run the following command to start the remote codec server

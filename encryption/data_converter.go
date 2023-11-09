@@ -33,7 +33,6 @@ type DataConverterOptions struct {
 	KeyID string
 	// Enable ZLib compression before encryption.
 	Compress bool
-	Db       *mongo.Controller
 }
 
 // Codec implements PayloadCodec using AES Crypt.
@@ -53,7 +52,6 @@ func (dc *DataConverter) WithWorkflowContext(ctx workflow.Context, c *mongo.Cont
 
 		options := dc.options
 		options.KeyID = val.KeyID
-		options.Db = c
 
 		return NewEncryptionDataConverter(parent, options)
 	}
@@ -72,7 +70,6 @@ func (dc *DataConverter) WithContext(ctx context.Context) converter.DataConverte
 
 		options := dc.options
 		options.KeyID = val.KeyID
-		options.Db = dc.options.Db
 
 		return NewEncryptionDataConverter(parent, options)
 	}
@@ -88,8 +85,9 @@ func (e *Codec) getKey(keyID string) (key []byte) {
 
 // NewEncryptionDataConverter creates a new instance of EncryptionDataConverter wrapping a DataConverter
 func NewEncryptionDataConverter(dataConverter converter.DataConverter, options DataConverterOptions) *DataConverter {
+	mongoController := mongo.NewMongoController()
 	codecs := []converter.PayloadCodec{
-		&Codec{KeyID: options.KeyID, Db: options.Db},
+		&Codec{KeyID: options.KeyID, Db: mongoController},
 	}
 	// Enable compression if requested.
 	// Note that this must be done before encryption to provide any value. Encrypted data should by design not compress very well.
@@ -178,6 +176,7 @@ func (e *Codec) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error
 			return payloads, err
 		}
 
+		// Metadata, on return the MetadataEncoding is "json/plain"
 		result[i] = &commonpb.Payload{
 			Metadata: map[string][]byte{
 				converter.MetadataEncoding: []byte(converter.MetadataEncodingJSON),
