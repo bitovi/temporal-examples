@@ -1,5 +1,5 @@
-import { Connection, WorkflowClient } from "@temporalio/client"
-import { basicWorkflow } from "./workflows"
+import {Connection, WorkflowClient, WorkflowHandle} from "@temporalio/client"
+import { basicWorkflow } from "./workflows.ts"
 import { v4 as uuidv4 } from "uuid"
 
 async function run() {
@@ -9,15 +9,19 @@ async function run() {
     connection,
   })
 
-  const workflowId = `workflow-${uuidv4()}`
+  const workflowIds = Array.from(new Array(7).keys()).map(() => `workflow-${uuidv4()}`)
+  const handles: WorkflowHandle[] = []
 
-  const handle = await client.start(basicWorkflow, {
-    args: [7],
-    taskQueue: "task-queue",
-    workflowId,
-  })
+  for (const workflowId of workflowIds) {
+    handles.push(await client.start(basicWorkflow, {
+      args: [Math.floor(Math.random() * 9) + 1],
+      taskQueue: "task-queue",
+      workflowId,
+    }))
+    await new Promise(r => setTimeout(r, 2000)) // sleep
+  }
 
-  const results = await handle.result()
+  const results = await Promise.all(handles.map((h) => h.result()))
   console.log(results)
 }
 

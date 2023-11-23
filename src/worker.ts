@@ -1,9 +1,10 @@
 import { Worker } from "@temporalio/worker"
-import * as activities from "./activities"
+import * as activities from "./activities.ts"
 
+const workflowsPath = new URL('./workflows.ts', import.meta.url).toString().replace('file://','')
 async function run() {
   const parentWorker = await Worker.create({
-    workflowsPath: require.resolve("./workflows"),
+    workflowsPath,
     activities,
     taskQueue: "task-queue",
   })
